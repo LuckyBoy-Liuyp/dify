@@ -82,6 +82,7 @@ from .auth import (
     login,
     oauth,
     oauth_server,
+    ticket_sso,
 )
 
 # Import billing controllers

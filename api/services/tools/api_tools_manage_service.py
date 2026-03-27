@@ -23,6 +23,7 @@ from core.tools.utils.encryption import create_tool_provider_encrypter
 from core.tools.utils.parser import ApiBasedToolSchemaParser
 from extensions.ext_database import db
 from graphon.model_runtime.utils.encoders import jsonable_encoder
+from models import TenantAccountRole
 from models.tools import ApiToolProvider
 from services.tools.tools_transform_service import ToolTransformService
 
@@ -517,12 +518,12 @@ class ApiToolManageService:
         :return: A list of ToolProviderApiEntity objects.
         """
         # get all api providers
-        # create new session with automatic transaction management
-        providers: list[ApiToolProvider] = []
-        with sessionmaker(db.engine, expire_on_commit=False).begin() as _session:
-            providers = list(
-                _session.scalars(select(ApiToolProvider).where(ApiToolProvider.tenant_id == tenant_id)).all()
-            )
+        from libs.login import current_user
+        is_admin = TenantAccountRole.is_admin_role(current_user.current_role)
+        api_tool_query = select(ApiToolProvider).where(ApiToolProvider.tenant_id == tenant_id)
+        if not is_admin:
+            api_tool_query = api_tool_query.where(ApiToolProvider.user_id == current_user.id)
+        db_providers = db.session.scalars(api_tool_query).all()
 
         result: list[ToolProviderApiEntity] = []
         for provider in providers:

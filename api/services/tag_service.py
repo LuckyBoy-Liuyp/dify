@@ -9,6 +9,7 @@ from sqlalchemy.engine import CursorResult
 from werkzeug.exceptions import NotFound
 
 from extensions.ext_database import db
+from models import TenantAccountRole
 from models.dataset import Dataset
 from models.enums import TagType
 from models.model import App, Tag, TagBinding
@@ -39,8 +40,8 @@ class TagBindingDeletePayload(BaseModel):
 class TagService:
     @staticmethod
     def get_tags(tag_type: str, current_tenant_id: str, keyword: str | None = None):
-        stmt = (
-            select(Tag.id, Tag.type, Tag.name, func.count(TagBinding.id).label("binding_count"))
+        query = (
+            db.session.query(Tag.id, Tag.type, Tag.name, func.count(TagBinding.id).label("binding_count"))
             .outerjoin(TagBinding, Tag.id == TagBinding.tag_id)
             .where(Tag.type == tag_type, Tag.tenant_id == current_tenant_id)
         )
@@ -48,9 +49,13 @@ class TagService:
             from libs.helper import escape_like_pattern
 
             escaped_keyword = escape_like_pattern(keyword)
-            stmt = stmt.where(sa.and_(Tag.name.ilike(f"%{escaped_keyword}%", escape="\\")))
-        stmt = stmt.group_by(Tag.id, Tag.type, Tag.name, Tag.created_at)
-        results: list = list(db.session.execute(stmt.order_by(Tag.created_at.desc())).all())
+            query = query.where(sa.and_(Tag.name.ilike(f"%{escaped_keyword}%", escape="\\")))
+            query = query.where(sa.and_(Tag.name.ilike(f"%{keyword}%")))
+
+        if not TenantAccountRole.is_admin_role(current_user.current_role):
+            query.where(Tag.created_by == current_user.id)
+        query = query.group_by(Tag.id, Tag.type, Tag.name, Tag.created_at)
+        results: list = query.order_by(Tag.created_at.desc()).all()
         return results
 
     @staticmethod

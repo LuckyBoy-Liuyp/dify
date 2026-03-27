@@ -28,7 +28,8 @@ from core.tools.plugin_tool.tool import PluginTool
 from core.tools.utils.uuid_utils import is_valid_uuid
 from core.tools.workflow_as_tool.provider import WorkflowToolProviderController
 from extensions.ext_database import db
-from graphon.runtime import VariablePool
+from libs.login import current_account_with_tenant
+from models import TenantAccountRole
 from models.provider_ids import ToolProviderID
 from services.tools.mcp_tools_manage_service import MCPToolManageService
 
@@ -657,14 +658,17 @@ class ToolManager:
         """
         # according to multi credentials, select the one with is_default=True first, then created_at oldest
         # for compatibility with old version
+        from libs.login import current_user
+        is_admin = TenantAccountRole.is_admin_role(current_user.current_role)
         if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
             # PostgreSQL: Use DISTINCT ON
             sql = """
                 SELECT DISTINCT ON (tenant_id, provider) id
                 FROM tool_builtin_providers
-                WHERE tenant_id = :tenant_id
-                ORDER BY tenant_id, provider, is_default DESC, created_at DESC
-                """
+                WHERE tenant_id = :tenant_id """
+            if not is_admin:
+                sql += """ AND user_id = :userId """
+            sql += """ ORDER BY tenant_id, provider, is_default DESC, created_at DESC """
         else:
             # MySQL: Use window function to achieve same result
             sql = """
@@ -675,20 +679,27 @@ class ToolManager:
                                ORDER BY is_default DESC, created_at DESC
                            ) as rn
                     FROM tool_builtin_providers
-                    WHERE tenant_id = :tenant_id
-                ) ranked WHERE rn = 1
-                """
+                    WHERE tenant_id = :tenant_id """
+            if not is_admin:
+                sql += """ AND user_id =  :userId """
+            sql += """ ) ranked WHERE rn = 1 """
 
         with Session(db.engine, autoflush=False) as session:
-            ids = [row.id for row in session.execute(sa.text(sql), {"tenant_id": tenant_id}).all()]
-            return list(session.scalars(select(BuiltinToolProvider).where(BuiltinToolProvider.id.in_(ids))))
+            params = {"tenant_id": tenant_id}
+            if not is_admin:
+                params["userId"] = current_user.id
+
+            result = session.execute(sa.text(sql), params).all()
+            ids = [row.id for row in result]
+            return session.query(BuiltinToolProvider).where(BuiltinToolProvider.id.in_(ids)).all()
 
     @classmethod
     def list_providers_from_api(
         cls, user_id: str, tenant_id: str, typ: ToolProviderTypeApiLiteral
     ) -> list[ToolProviderApiEntity]:
         result_providers: dict[str, ToolProviderApiEntity] = {}
-
+        current_user, _ = current_account_with_tenant()
+        is_admin = TenantAccountRole.is_admin_role(current_user)
         filters = []
         if not typ:
             filters.extend(["builtin", "api", "workflow", "mcp"])
@@ -729,10 +740,10 @@ class ToolManager:
 
             # get db api providers
             if "api" in filters:
-                db_api_providers = session.scalars(
-                    select(ApiToolProvider).where(ApiToolProvider.tenant_id == tenant_id)
-                ).all()
-
+                api_provider_query = select(ApiToolProvider).where(ApiToolProvider.tenant_id == tenant_id)
+                if not is_admin:
+                    api_provider_query = api_provider_query.where(ApiToolProvider.user_id == user_id)
+                db_api_providers = db.session.scalars(api_provider_query).all()
                 # Batch create controllers
                 api_provider_controllers: list[ApiProviderControllerItem] = []
                 for api_provider in db_api_providers:
@@ -764,10 +775,12 @@ class ToolManager:
 
             if "workflow" in filters:
                 # get workflow providers
-                workflow_providers = session.scalars(
-                    select(WorkflowToolProvider).where(WorkflowToolProvider.tenant_id == tenant_id)
-                ).all()
-
+                workflow_providers_query = select(WorkflowToolProvider).where(
+                    WorkflowToolProvider.tenant_id == tenant_id
+                )
+                if not is_admin:
+                    workflow_providers_query = workflow_providers_query.where(WorkflowToolProvider.user_id == user_id)
+                workflow_providers = db.session.scalars(workflow_providers_query).all()
                 workflow_provider_controllers: list[WorkflowToolProviderController] = []
                 for workflow_provider in workflow_providers:
                     try:

@@ -7,13 +7,26 @@ from sqlalchemy import select
 from controllers.console.app.error import AppNotFoundError
 from extensions.ext_database import db
 from libs.login import current_account_with_tenant
-from models import App, AppMode
+from models import App, AppMode, TenantAccountRole
 
 
 def _load_app_model(app_id: str) -> App | None:
-    _, current_tenant_id = current_account_with_tenant()
-    app_model = db.session.scalar(
-        select(App).where(App.id == app_id, App.tenant_id == current_tenant_id, App.status == "normal").limit(1)
+    current_user, current_tenant_id = current_account_with_tenant()
+    # 构建基础查询条件
+    conditions = [
+        App.id == app_id,
+        App.tenant_id == current_tenant_id,
+        App.status == "normal"
+    ]
+
+    # 非管理员用户需要额外验证创建者权限
+    if not TenantAccountRole.is_admin_role(current_user.current_role):
+        conditions.append(App.created_by == current_user.id)
+
+    app_model = (
+        db.session.query(App)
+            .where(*conditions)
+            .limit(1)
     )
     return app_model
 
@@ -107,7 +120,7 @@ def get_app_model_with_trial[**P, R](
 ) -> Callable[P, R] | Callable[[Callable[P, R]], Callable[P, R]]:
     def decorator(view_func: Callable[P, R]) -> Callable[P, R]:
         @wraps(view_func)
-        def decorated_view(*args: P.args, **kwargs: P.kwargs) -> R:
+        def decorated_view(*args: P.args, **kwargs: P.kwargs):
             if not kwargs.get("app_id"):
                 raise ValueError("missing app_id in path parameters")
 
