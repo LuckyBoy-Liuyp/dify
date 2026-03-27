@@ -18,7 +18,7 @@ from events.app_event import app_was_created
 from extensions.ext_database import db
 from libs.datetime_utils import naive_utc_now
 from libs.login import current_user
-from models import Account
+from models import Account, TenantAccountRole
 from models.model import App, AppMode, AppModelConfig, Site
 from models.tools import ApiToolProvider
 from services.billing_service import BillingService
@@ -64,7 +64,9 @@ class AppService:
                 filters.append(App.id.in_(target_ids))
             else:
                 return None
-
+        # 判断是否是管理员
+        if not TenantAccountRole.is_admin_role(current_user.current_role):
+            filters.append(App.created_by == current_user.id)
         app_models = db.paginate(
             sa.select(App).where(*filters).order_by(App.created_at.desc()),
             page=args["page"],
@@ -250,6 +252,8 @@ class AppService:
         :return: App instance
         """
         assert current_user is not None
+        if not TenantAccountRole.is_admin_role(current_user.current_role):
+            assert current_user.id != app.created_by, "not authentication"
         app.name = args["name"]
         app.description = args["description"]
         app.icon_type = args["icon_type"]

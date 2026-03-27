@@ -5,7 +5,7 @@ from typing import ParamSpec, TypeVar, Union
 from controllers.console.app.error import AppNotFoundError
 from extensions.ext_database import db
 from libs.login import current_account_with_tenant
-from models import App, AppMode
+from models import App, AppMode, TenantAccountRole
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -14,11 +14,22 @@ R1 = TypeVar("R1")
 
 
 def _load_app_model(app_id: str) -> App | None:
-    _, current_tenant_id = current_account_with_tenant()
+    current_user, current_tenant_id = current_account_with_tenant()
+    # 构建基础查询条件
+    conditions = [
+        App.id == app_id,
+        App.tenant_id == current_tenant_id,
+        App.status == "normal"
+    ]
+
+    # 非管理员用户需要额外验证创建者权限
+    if not TenantAccountRole.is_admin_role(current_user.current_role):
+        conditions.append(App.created_by == current_user.id)
+
     app_model = (
         db.session.query(App)
-        .where(App.id == app_id, App.tenant_id == current_tenant_id, App.status == "normal")
-        .first()
+            .where(*conditions)
+            .first()
     )
     return app_model
 

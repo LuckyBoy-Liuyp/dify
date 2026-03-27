@@ -58,6 +58,8 @@ from core.tools.tool_label_manager import ToolLabelManager
 from core.tools.utils.configuration import ToolParameterConfigurationManager
 from core.tools.utils.encryption import create_provider_encrypter, create_tool_provider_encrypter
 from core.tools.workflow_as_tool.tool import WorkflowTool
+from libs.login import current_account_with_tenant
+from models import TenantAccountRole
 from models.tools import ApiToolProvider, BuiltinToolProvider, WorkflowToolProvider
 from services.tools.tools_transform_service import ToolTransformService
 
@@ -629,9 +631,9 @@ class ToolManager:
             # MySQL: Use window function to achieve same result
             sql = """
                 SELECT id FROM (
-                    SELECT id, 
+                    SELECT id,
                            ROW_NUMBER() OVER (
-                               PARTITION BY tenant_id, provider 
+                               PARTITION BY tenant_id, provider
                                ORDER BY is_default DESC, created_at DESC
                            ) as rn
                     FROM tool_builtin_providers
@@ -648,13 +650,13 @@ class ToolManager:
         cls, user_id: str, tenant_id: str, typ: ToolProviderTypeApiLiteral
     ) -> list[ToolProviderApiEntity]:
         result_providers: dict[str, ToolProviderApiEntity] = {}
-
+        current_user, _ = current_account_with_tenant()
+        is_admin = TenantAccountRole.is_admin_role(current_user)
         filters = []
         if not typ:
             filters.extend(["builtin", "api", "workflow", "mcp"])
         else:
             filters.append(typ)
-
         with db.session.no_autoflush:
             if "builtin" in filters:
                 builtin_providers = cls.list_builtin_providers(tenant_id)
@@ -688,10 +690,10 @@ class ToolManager:
 
             # get db api providers
             if "api" in filters:
-                db_api_providers = db.session.scalars(
-                    select(ApiToolProvider).where(ApiToolProvider.tenant_id == tenant_id)
-                ).all()
-
+                api_provider_query = select(ApiToolProvider).where(ApiToolProvider.tenant_id == tenant_id)
+                if not is_admin:
+                    api_provider_query = api_provider_query.where(ApiToolProvider.user_id == user_id)
+                db_api_providers = db.session.scalars(api_provider_query).all()
                 api_provider_controllers: list[dict[str, Any]] = [
                     {"provider": provider, "controller": ToolTransformService.api_provider_to_controller(provider)}
                     for provider in db_api_providers
@@ -711,9 +713,12 @@ class ToolManager:
 
             if "workflow" in filters:
                 # get workflow providers
-                workflow_providers = db.session.scalars(
-                    select(WorkflowToolProvider).where(WorkflowToolProvider.tenant_id == tenant_id)
-                ).all()
+                workflow_providers_query = select(WorkflowToolProvider).where(
+                    WorkflowToolProvider.tenant_id == tenant_id
+                )
+                if not is_admin:
+                    workflow_providers_query = workflow_providers_query.where(WorkflowToolProvider.user_id == user_id)
+                workflow_providers = db.session.scalars(workflow_providers_query).all()
 
                 workflow_provider_controllers: list[WorkflowToolProviderController] = []
                 for workflow_provider in workflow_providers:
