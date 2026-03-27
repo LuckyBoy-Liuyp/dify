@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from werkzeug.exceptions import NotFound
 
 from extensions.ext_database import db
+from models import TenantAccountRole
 from models.dataset import Dataset
 from models.model import App, Tag, TagBinding
 
@@ -23,6 +24,10 @@ class TagService:
 
             escaped_keyword = escape_like_pattern(keyword)
             query = query.where(sa.and_(Tag.name.ilike(f"%{escaped_keyword}%", escape="\\")))
+            query = query.where(sa.and_(Tag.name.ilike(f"%{keyword}%")))
+
+        if not TenantAccountRole.is_admin_role(current_user.current_role):
+            query.where(Tag.created_by == current_user.id)
         query = query.group_by(Tag.id, Tag.type, Tag.name, Tag.created_at)
         results: list = query.order_by(Tag.created_at.desc()).all()
         return results

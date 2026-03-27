@@ -528,6 +528,23 @@ class BuiltinToolManageService:
 
         # get all user added providers
         db_providers: list[BuiltinToolProvider] = ToolManager.list_default_builtin_providers(tenant_id)
+        # is_admin = TenantAccountRole.is_admin_role(current_user.current_role)
+        # # get all user added providers
+        # with Session(db.engine) as session:
+        #     if not is_admin:
+        #         # Admin/Owner: get all providers in the tenant
+        #         db_providers: list[BuiltinToolProvider] = (
+        #             session.query(BuiltinToolProvider)
+        #                 .filter_by(tenant_id=tenant_id)
+        #                 .all()
+        #         )
+        #     else:
+        #         # Normal user: get only providers created by the user
+        #         db_providers: list[BuiltinToolProvider] = (
+        #             session.query(BuiltinToolProvider)
+        #                 .filter_by(tenant_id=tenant_id, user_id=user_id)
+        #                 .all()
+        #         )
 
         # rewrite db_providers
         for db_provider in db_providers:

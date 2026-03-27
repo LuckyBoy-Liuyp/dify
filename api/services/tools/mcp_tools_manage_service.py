@@ -274,9 +274,14 @@ class MCPToolManageService:
             for_list: If True, return provider ID; if False, return server identifier
             include_sensitive: If False, skip expensive decryption operations (default: True for backward compatibility)
         """
+        from libs.login import current_account_with_tenant
+        from models import TenantAccountRole
         from models.account import Account
-
+        current_user, _ = current_account_with_tenant()
+        is_admin = TenantAccountRole.is_admin_role(current_user)
         stmt = select(MCPToolProvider).where(MCPToolProvider.tenant_id == tenant_id).order_by(MCPToolProvider.name)
+        if not is_admin:
+            stmt = stmt.where(MCPToolProvider.user_id == current_user.get_id())
         mcp_providers = self._session.scalars(stmt).all()
 
         if not mcp_providers:

@@ -38,6 +38,7 @@ from services.billing_service import BillingService
 from services.errors.account import (
     AccountAlreadyInTenantError,
     AccountLoginError,
+    AccountNotFoundError,
     AccountNotLinkTenantError,
     AccountPasswordError,
     AccountRegisterError,
@@ -173,8 +174,11 @@ class AccountService:
         return token
 
     @staticmethod
-    def authenticate(email: str, password: str, invite_token: str | None = None) -> Account:
+    def authenticate(email: str, password: str, mobile: str, invite_token: str | None = None) -> Account:
         """authenticate account with email and password"""
+
+        if not mobile:
+            raise AccountNotFoundError("mobile is not null.")
 
         account = db.session.query(Account).filter_by(email=email).first()
         if not account:
@@ -199,6 +203,7 @@ class AccountService:
             account.status = AccountStatus.ACTIVE
             account.initialized_at = naive_utc_now()
 
+        account.mobile = mobile
         db.session.commit()
 
         return account
@@ -231,6 +236,7 @@ class AccountService:
         name: str,
         interface_language: str,
         password: str | None = None,
+        mobile: str | None = None,
         interface_theme: str = "light",
         is_setup: bool | None = False,
     ) -> Account:
@@ -268,6 +274,7 @@ class AccountService:
             name=name,
             email=email,
             password=password_to_set,
+            mobile=mobile,
             password_salt=salt_to_set,
             interface_language=interface_language,
             interface_theme=interface_theme,
@@ -1330,7 +1337,7 @@ class RegisterService:
         return f"member_invite:token:{token}"
 
     @classmethod
-    def setup(cls, email: str, name: str, password: str, ip_address: str, language: str | None):
+    def setup(cls, email: str, name: str, password: str, ip_address: str, mobile: str, language: str | None):
         """
         Setup dify
 
@@ -1346,6 +1353,7 @@ class RegisterService:
                 name=name,
                 interface_language=get_valid_language(language),
                 password=password,
+                mobile=mobile,
                 is_setup=True,
             )
 

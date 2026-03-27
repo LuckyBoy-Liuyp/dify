@@ -56,6 +56,7 @@ class LoginPayload(BaseModel):
     password: str = Field(..., description="Password")
     remember_me: bool = Field(default=False, description="Remember me flag")
     invite_token: str | None = Field(default=None, description="Invitation token")
+    mobile: str | None = Field(default=None, description="Mobile phone number")
 
 
 class EmailPayload(BaseModel):
@@ -91,6 +92,7 @@ class LoginApi(Resource):
         """Authenticate user and login."""
         args = LoginPayload.model_validate(console_ns.payload)
         request_email = args.email
+        request_mobile = args.mobile
         normalized_email = request_email.lower()
 
         if dify_config.BILLING_ENABLED and BillingService.is_email_in_freeze(normalized_email):
@@ -115,7 +117,7 @@ class LoginApi(Resource):
                 if invitee_email_normalized != normalized_email:
                     raise InvalidEmailError()
             account = _authenticate_account_with_case_fallback(
-                request_email, normalized_email, args.password, invite_token
+                request_email, normalized_email, args.password, request_mobile, invite_token
             )
         except services.errors.account.AccountLoginError:
             raise AccountBannedError()
@@ -331,11 +333,11 @@ def _get_account_with_case_fallback(email: str):
 
 
 def _authenticate_account_with_case_fallback(
-    original_email: str, normalized_email: str, password: str, invite_token: str | None
+    original_email: str, normalized_email: str, password: str, request_mobile: str, invite_token: str | None
 ):
     try:
-        return AccountService.authenticate(original_email, password, invite_token)
+        return AccountService.authenticate(original_email, password, request_mobile, invite_token)
     except services.errors.account.AccountPasswordError:
         if original_email == normalized_email:
             raise
-        return AccountService.authenticate(normalized_email, password, invite_token)
+        return AccountService.authenticate(normalized_email, password, request_mobile, invite_token)
