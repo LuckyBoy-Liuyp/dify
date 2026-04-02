@@ -10,7 +10,7 @@ import logging
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from flask import make_response, request
-from flask_restx import Resource, reqparse
+from flask_restx import Resource
 
 from configs import dify_config
 from controllers.console import console_ns
