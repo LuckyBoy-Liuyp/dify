@@ -1,4 +1,3 @@
-import { RiContractLine, RiDoorLockLine, RiErrorWarningFill } from '@remixicon/react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import * as React from 'react'
@@ -27,6 +26,7 @@ const NormalForm = () => {
   const isLoggedIn = loginData?.logged_in
   const message = decodeURIComponent(searchParams.get('message') || '')
   const invite_token = decodeURIComponent(searchParams.get('invite_token') || '')
+  const ticket = searchParams.get('ticket')
   const [isInitCheckLoading, setInitCheckLoading] = useState(true)
   const [isRedirecting, setIsRedirecting] = useState(false)
   const isLoading = isCheckLoading || isInitCheckLoading || isRedirecting
@@ -44,6 +44,12 @@ const NormalForm = () => {
         setIsRedirecting(true)
         const redirectUrl = resolvePostLoginRedirect(searchParams)
         router.replace(redirectUrl || '/apps')
+        return
+      }
+      // 肖星亮修改
+      if (ticket) {
+        setIsRedirecting(true)
+        router.replace('/apps')
         return
       }
 
@@ -71,7 +77,7 @@ const NormalForm = () => {
       setAllMethodsAreDisabled(true)
     }
     finally { setInitCheckLoading(false) }
-  }, [isLoggedIn, message, router, invite_token, isInviteLink, systemFeatures])
+  }, [isLoggedIn, message, router, invite_token, isInviteLink, systemFeatures, ticket, searchParams])
   useEffect(() => {
     init()
   }, [init])
@@ -94,12 +100,12 @@ const NormalForm = () => {
       <div className="mx-auto mt-8 w-full">
         <div className="relative">
           <div className="rounded-lg bg-gradient-to-r from-workflow-workflow-progress-bg-1 to-workflow-workflow-progress-bg-2 p-4">
-            <div className="shadows-shadow-lg relative mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-components-card-bg shadow">
-              <RiContractLine className="h-5 w-5" />
-              <RiErrorWarningFill className="absolute -right-1 -top-1 h-4 w-4 text-text-warning-secondary" />
+            <div className="relative mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-components-card-bg shadow">
+              <i className="i-ri-contract-line block h-5 w-5"></i>
+              <i className="i-ri-error-warning-fill absolute -right-1 -top-1 h-4 w-4 text-text-warning-secondary"></i>
             </div>
-            <p className="system-sm-medium text-text-primary">{t('licenseLost', { ns: 'login' })}</p>
-            <p className="system-xs-regular mt-1 text-text-tertiary">{t('licenseLostTip', { ns: 'login' })}</p>
+            <p className="text-text-primary system-sm-medium">{t('licenseLost', { ns: 'login' })}</p>
+            <p className="mt-1 text-text-tertiary system-xs-regular">{t('licenseLostTip', { ns: 'login' })}</p>
           </div>
         </div>
       </div>
@@ -110,12 +116,12 @@ const NormalForm = () => {
       <div className="mx-auto mt-8 w-full">
         <div className="relative">
           <div className="rounded-lg bg-gradient-to-r from-workflow-workflow-progress-bg-1 to-workflow-workflow-progress-bg-2 p-4">
-            <div className="shadows-shadow-lg relative mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-components-card-bg shadow">
-              <RiContractLine className="h-5 w-5" />
-              <RiErrorWarningFill className="absolute -right-1 -top-1 h-4 w-4 text-text-warning-secondary" />
+            <div className="relative mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-components-card-bg shadow">
+              <i className="i-ri-contract-line block h-5 w-5"></i>
+              <i className="i-ri-error-warning-fill absolute -right-1 -top-1 h-4 w-4 text-text-warning-secondary"></i>
             </div>
-            <p className="system-sm-medium text-text-primary">{t('licenseExpired', { ns: 'login' })}</p>
-            <p className="system-xs-regular mt-1 text-text-tertiary">{t('licenseExpiredTip', { ns: 'login' })}</p>
+            <p className="text-text-primary system-sm-medium">{t('licenseExpired', { ns: 'login' })}</p>
+            <p className="mt-1 text-text-tertiary system-xs-regular">{t('licenseExpiredTip', { ns: 'login' })}</p>
           </div>
         </div>
       </div>
@@ -126,12 +132,12 @@ const NormalForm = () => {
       <div className="mx-auto mt-8 w-full">
         <div className="relative">
           <div className="rounded-lg bg-gradient-to-r from-workflow-workflow-progress-bg-1 to-workflow-workflow-progress-bg-2 p-4">
-            <div className="shadows-shadow-lg relative mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-components-card-bg shadow">
-              <RiContractLine className="h-5 w-5" />
-              <RiErrorWarningFill className="absolute -right-1 -top-1 h-4 w-4 text-text-warning-secondary" />
+            <div className="relative mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-components-card-bg shadow">
+              <i className="i-ri-contract-line block h-5 w-5"></i>
+              <i className="i-ri-error-warning-fill absolute -right-1 -top-1 h-4 w-4 text-text-warning-secondary"></i>
             </div>
-            <p className="system-sm-medium text-text-primary">{t('licenseInactive', { ns: 'login' })}</p>
-            <p className="system-xs-regular mt-1 text-text-tertiary">{t('licenseInactiveTip', { ns: 'login' })}</p>
+            <p className="text-text-primary system-sm-medium">{t('licenseInactive', { ns: 'login' })}</p>
+            <p className="mt-1 text-text-tertiary system-xs-regular">{t('licenseInactiveTip', { ns: 'login' })}</p>
           </div>
         </div>
       </div>
@@ -144,12 +150,12 @@ const NormalForm = () => {
         {isInviteLink
           ? (
               <div className="mx-auto w-full">
-                <h2 className="title-4xl-semi-bold text-text-primary">
+                <h2 className="text-text-primary title-4xl-semi-bold">
                   {t('join', { ns: 'login' })}
                   {workspaceName}
                 </h2>
                 {!systemFeatures.branding.enabled && (
-                  <p className="body-md-regular mt-2 text-text-tertiary">
+                  <p className="mt-2 text-text-tertiary body-md-regular">
                     {t('joinTipStart', { ns: 'login' })}
                     {workspaceName}
                     {t('joinTipEnd', { ns: 'login' })}
@@ -159,8 +165,8 @@ const NormalForm = () => {
             )
           : (
               <div className="mx-auto w-full">
-                <h2 className="title-4xl-semi-bold text-text-primary">{systemFeatures.branding.enabled ? t('pageTitleForE', { ns: 'login' }) : t('pageTitle', { ns: 'login' })}</h2>
-                <p className="body-md-regular mt-2 text-text-tertiary">{t('welcome', { ns: 'login' })}</p>
+                <h2 className="text-text-primary title-4xl-semi-bold">{systemFeatures.branding.enabled ? t('pageTitleForE', { ns: 'login' }) : t('pageTitle', { ns: 'login' })}</h2>
+                <p className="mt-2 text-text-tertiary body-md-regular">{t('welcome', { ns: 'login' })}</p>
               </div>
             )}
         <div className="relative">
@@ -177,7 +183,7 @@ const NormalForm = () => {
             <div className="relative mt-6">
               <div className="flex items-center">
                 <div className="h-px flex-1 bg-gradient-to-r from-background-gradient-mask-transparent to-divider-regular"></div>
-                <span className="system-xs-medium-uppercase px-3 text-text-tertiary">{t('or', { ns: 'login' })}</span>
+                <span className="px-3 text-text-tertiary system-xs-medium-uppercase">{t('or', { ns: 'login' })}</span>
                 <div className="h-px flex-1 bg-gradient-to-l from-background-gradient-mask-transparent to-divider-regular"></div>
               </div>
             </div>
@@ -190,7 +196,7 @@ const NormalForm = () => {
                     <MailAndCodeAuth isInvite={isInviteLink} />
                     {systemFeatures.enable_email_password_login && (
                       <div className="cursor-pointer py-1 text-center" onClick={() => { updateAuthType('password') }}>
-                        <span className="system-xs-medium text-components-button-secondary-accent-text">{t('usePassword', { ns: 'login' })}</span>
+                        <span className="text-components-button-secondary-accent-text system-xs-medium">{t('usePassword', { ns: 'login' })}</span>
                       </div>
                     )}
                   </>
@@ -200,7 +206,7 @@ const NormalForm = () => {
                     <MailAndPasswordAuth isInvite={isInviteLink} isEmailSetup={systemFeatures.is_email_setup} allowRegistration={systemFeatures.is_allow_register} />
                     {systemFeatures.enable_email_code_login && (
                       <div className="cursor-pointer py-1 text-center" onClick={() => { updateAuthType('code') }}>
-                        <span className="system-xs-medium text-components-button-secondary-accent-text">{t('useVerificationCode', { ns: 'login' })}</span>
+                        <span className="text-components-button-secondary-accent-text system-xs-medium">{t('useVerificationCode', { ns: 'login' })}</span>
                       </div>
                     )}
                   </>
@@ -224,11 +230,11 @@ const NormalForm = () => {
           {allMethodsAreDisabled && (
             <>
               <div className="rounded-lg bg-gradient-to-r from-workflow-workflow-progress-bg-1 to-workflow-workflow-progress-bg-2 p-4">
-                <div className="shadows-shadow-lg mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-components-card-bg shadow">
-                  <RiDoorLockLine className="h-5 w-5" />
+                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-components-card-bg shadow">
+                  <i className="i-ri-door-lock-line block h-5 w-5"></i>
                 </div>
-                <p className="system-sm-medium text-text-primary">{t('noLoginMethod', { ns: 'login' })}</p>
-                <p className="system-xs-regular mt-1 text-text-tertiary">{t('noLoginMethodTip', { ns: 'login' })}</p>
+                <p className="text-text-primary system-sm-medium">{t('noLoginMethod', { ns: 'login' })}</p>
+                <p className="mt-1 text-text-tertiary system-xs-regular">{t('noLoginMethodTip', { ns: 'login' })}</p>
               </div>
               <div className="relative my-2 py-2">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
@@ -239,11 +245,11 @@ const NormalForm = () => {
           )}
           {!systemFeatures.branding.enabled && (
             <>
-              <div className="system-xs-regular mt-2 block w-full text-text-tertiary">
+              <div className="mt-2 block w-full text-text-tertiary system-xs-regular">
                 {t('tosDesc', { ns: 'login' })}
               &nbsp;
                 <Link
-                  className="system-xs-medium text-text-secondary hover:underline"
+                  className="text-text-secondary system-xs-medium hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                   href="https://dify.ai/terms"
@@ -252,7 +258,7 @@ const NormalForm = () => {
                 </Link>
               &nbsp;&&nbsp;
                 <Link
-                  className="system-xs-medium text-text-secondary hover:underline"
+                  className="text-text-secondary system-xs-medium hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                   href="https://dify.ai/privacy"
@@ -261,11 +267,11 @@ const NormalForm = () => {
                 </Link>
               </div>
               {IS_CE_EDITION && (
-                <div className="w-hull system-xs-regular mt-2 block text-text-tertiary">
+                <div className="mt-2 block text-text-tertiary body-xs-regular">
                   {t('goToInit', { ns: 'login' })}
               &nbsp;
                   <Link
-                    className="system-xs-medium text-text-secondary hover:underline"
+                    className="text-text-secondary system-xs-medium hover:underline"
                     href="/install"
                   >
                     {t('setAdminAccount', { ns: 'login' })}
