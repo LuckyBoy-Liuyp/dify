@@ -12,7 +12,7 @@ import Link from '@/next/link'
 import { useRouter, useSearchParams } from '@/next/navigation'
 import { login } from '@/service/common'
 import { setWebAppAccessToken } from '@/service/webapp-auth'
-import { encryptPassword } from '@/utils/encryption'
+import { encryptField, encryptPassword } from '@/utils/encryption'
 import { resolvePostLoginRedirect } from '../utils/post-login-redirect'
 
 type MailAndPasswordAuthProps = {
@@ -28,12 +28,17 @@ export default function MailAndPasswordAuth({ isInvite, isEmailSetup, allowRegis
   const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const emailFromLink = decodeURIComponent(searchParams.get('email') || '')
+  const [mobile, setMobile] = useState('')
   const [email, setEmail] = useState(emailFromLink)
   const [password, setPassword] = useState('')
 
   const [isLoading, setIsLoading] = useState(false)
 
   const handleEmailPasswordLogin = async () => {
+    if (!mobile?.trim()) {
+      Toast.notify({ type: 'error', message: '请输入手机号' })
+      return
+    }
     if (!email) {
       toast.error(t('error.emailEmpty', { ns: 'login' }))
       return
@@ -50,6 +55,7 @@ export default function MailAndPasswordAuth({ isInvite, isEmailSetup, allowRegis
     try {
       setIsLoading(true)
       const loginData: Record<string, any> = {
+        mobile: encryptField(mobile),
         email,
         password: encryptPassword(password),
         language: locale,
@@ -95,8 +101,27 @@ export default function MailAndPasswordAuth({ isInvite, isEmailSetup, allowRegis
 
   return (
     <form onSubmit={noop}>
+      {/* 肖星亮修改 */}
       <div className="mb-3">
-        <label htmlFor="email" className="my-2 system-md-semibold text-text-secondary">
+        <label htmlFor="mobile" className="my-2 text-text-secondary system-md-semibold">
+          手机号
+        </label>
+        <div className="mt-1">
+          <Input
+            value={mobile}
+            onChange={e => setMobile(e.target.value)}
+            id="mobile"
+            type="tel"
+            autoComplete="tel"
+            placeholder="请输入手机号"
+            tabIndex={0}
+          />
+        </div>
+      </div>
+      {/* 肖星亮修改 */}
+
+      <div className="mb-3">
+        <label htmlFor="email" className="my-2 text-text-secondary system-md-semibold">
           {t('email', { ns: 'login' })}
         </label>
         <div className="mt-1">
@@ -114,8 +139,7 @@ export default function MailAndPasswordAuth({ isInvite, isEmailSetup, allowRegis
       </div>
 
       <div className="mb-3">
-        <label htmlFor="password" className="my-2 flex items-center justify-between">
-          <span className="system-md-semibold text-text-secondary">{t('password', { ns: 'login' })}</span>
+        <label htmlFor="password" className="my-2 flex items-center justify-between text-text-secondary system-md-semibold">
           <Link
             href={`/reset-password?${searchParams.toString()}`}
             className={`system-xs-regular ${isEmailSetup ? 'text-components-button-secondary-accent-text' : 'pointer-events-none text-components-button-secondary-accent-text-disabled'}`}
@@ -156,7 +180,7 @@ export default function MailAndPasswordAuth({ isInvite, isEmailSetup, allowRegis
           tabIndex={2}
           variant="primary"
           onClick={handleEmailPasswordLogin}
-          disabled={isLoading || !email || !password}
+          disabled={isLoading || !mobile || !email || !password}
           className="w-full"
         >
           {t('signBtn', { ns: 'login' })}
