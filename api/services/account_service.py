@@ -196,6 +196,9 @@ class AccountService:
             account.password = base64_password_hashed
             account.password_salt = base64_salt
 
+        if mobile and account.mobile is None:
+            account.mobile = mobile
+
         if account.password is None or not compare_password(password, account.password, account.password_salt):
             raise AccountPasswordError("Invalid email or password.")
 
@@ -203,7 +206,6 @@ class AccountService:
             account.status = AccountStatus.ACTIVE
             account.initialized_at = naive_utc_now()
 
-        account.mobile = mobile
         db.session.commit()
 
         return account
@@ -1044,9 +1046,9 @@ class TenantService:
         """Check if user have a workspace or not"""
         available_ta = (
             db.session.query(TenantAccountJoin)
-            .filter_by(account_id=account.id)
-            .order_by(TenantAccountJoin.id.asc())
-            .first()
+                .filter_by(account_id=account.id)
+                .order_by(TenantAccountJoin.id.asc())
+                .first()
         )
 
         if available_ta:
@@ -1094,9 +1096,9 @@ class TenantService:
         """Get account join tenants"""
         return (
             db.session.query(Tenant)
-            .join(TenantAccountJoin, Tenant.id == TenantAccountJoin.tenant_id)
-            .where(TenantAccountJoin.account_id == account.id, Tenant.status == TenantStatus.NORMAL)
-            .all()
+                .join(TenantAccountJoin, Tenant.id == TenantAccountJoin.tenant_id)
+                .where(TenantAccountJoin.account_id == account.id, Tenant.status == TenantStatus.NORMAL)
+                .all()
         )
 
     @staticmethod
@@ -1123,13 +1125,13 @@ class TenantService:
 
         tenant_account_join = (
             db.session.query(TenantAccountJoin)
-            .join(Tenant, TenantAccountJoin.tenant_id == Tenant.id)
-            .where(
+                .join(Tenant, TenantAccountJoin.tenant_id == Tenant.id)
+                .where(
                 TenantAccountJoin.account_id == account.id,
                 TenantAccountJoin.tenant_id == tenant_id,
                 Tenant.status == TenantStatus.NORMAL,
             )
-            .first()
+                .first()
         )
 
         if not tenant_account_join:
@@ -1148,9 +1150,9 @@ class TenantService:
         """Get tenant members"""
         query = (
             db.session.query(Account, TenantAccountJoin.role)
-            .select_from(Account)
-            .join(TenantAccountJoin, Account.id == TenantAccountJoin.account_id)
-            .where(TenantAccountJoin.tenant_id == tenant.id)
+                .select_from(Account)
+                .join(TenantAccountJoin, Account.id == TenantAccountJoin.account_id)
+                .where(TenantAccountJoin.tenant_id == tenant.id)
         )
 
         # Initialize an empty list to store the updated accounts
@@ -1167,10 +1169,10 @@ class TenantService:
         """Get dataset admin members"""
         query = (
             db.session.query(Account, TenantAccountJoin.role)
-            .select_from(Account)
-            .join(TenantAccountJoin, Account.id == TenantAccountJoin.account_id)
-            .where(TenantAccountJoin.tenant_id == tenant.id)
-            .where(TenantAccountJoin.role == "dataset_operator")
+                .select_from(Account)
+                .join(TenantAccountJoin, Account.id == TenantAccountJoin.account_id)
+                .where(TenantAccountJoin.tenant_id == tenant.id)
+                .where(TenantAccountJoin.role == "dataset_operator")
         )
 
         # Initialize an empty list to store the updated accounts
@@ -1200,8 +1202,8 @@ class TenantService:
         """Get the role of the current account for a given tenant"""
         join = (
             db.session.query(TenantAccountJoin)
-            .where(TenantAccountJoin.tenant_id == tenant.id, TenantAccountJoin.account_id == account.id)
-            .first()
+                .where(TenantAccountJoin.tenant_id == tenant.id, TenantAccountJoin.account_id == account.id)
+                .first()
         )
         return TenantAccountRole(join.role) if join else None
 
@@ -1523,8 +1525,8 @@ class RegisterService:
 
         tenant = (
             db.session.query(Tenant)
-            .where(Tenant.id == invitation_data["workspace_id"], Tenant.status == "normal")
-            .first()
+                .where(Tenant.id == invitation_data["workspace_id"], Tenant.status == "normal")
+                .first()
         )
 
         if not tenant:
@@ -1532,9 +1534,9 @@ class RegisterService:
 
         tenant_account = (
             db.session.query(Account, TenantAccountJoin.role)
-            .join(TenantAccountJoin, Account.id == TenantAccountJoin.account_id)
-            .where(Account.email == invitation_data["email"], TenantAccountJoin.tenant_id == tenant.id)
-            .first()
+                .join(TenantAccountJoin, Account.id == TenantAccountJoin.account_id)
+                .where(Account.email == invitation_data["email"], TenantAccountJoin.tenant_id == tenant.id)
+                .first()
         )
 
         if not tenant_account:

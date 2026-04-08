@@ -1,3 +1,5 @@
+import logging
+
 import flask_restx
 from flask_restx import Resource, fields, marshal_with
 from flask_restx._http import HTTPStatus
@@ -11,6 +13,8 @@ from libs.login import current_account_with_tenant, login_required
 from models.dataset import Dataset
 from models.model import ApiToken, App
 from services.api_token_service import ApiTokenCache
+
+logger = logging.getLogger(__name__)
 
 from . import console_ns
 from .wraps import account_initialization_required, edit_permission_required, setup_required
@@ -79,7 +83,7 @@ class BaseApiKeyListResource(Resource):
         assert self.resource_id_field is not None, "resource_id_field must be set"
         resource_id = str(resource_id)
         _, current_tenant_id = current_account_with_tenant()
-        _get_resource(resource_id, current_tenant_id, self.resource_model)
+        resource = _get_resource(resource_id, current_tenant_id, self.resource_model)
         current_key_count = (
             db.session.query(ApiToken)
             .where(ApiToken.type == self.resource_type, getattr(ApiToken, self.resource_id_field) == resource_id)
@@ -101,6 +105,36 @@ class BaseApiKeyListResource(Resource):
         api_token.type = self.resource_type
         db.session.add(api_token)
         db.session.commit()
+
+        # Async sync API key to knowledge platform using threading (non-blocking)
+        if self.resource_model == App:
+            from services.knowledge_platform_sync_service import KnowledgePlatformSyncService
+
+            # Capture current user info before starting async thread
+            current_user, _ = current_account_with_tenant()
+            creator_mobile = current_user.mobile if hasattr(current_user, 'mobile') else None
+
+            def _sync_api_key_async():
+                try:
+                    sync_service = KnowledgePlatformSyncService()
+                    result = sync_service.sync_app_api_key(resource, key, creator_mobile)
+                    if result.get("success"):
+                        logger.info("App %s API key synced to knowledge platform successfully", resource_id)
+                    else:
+                        logger.warning(
+                            "App %s API key sync failed: %s",
+                            resource_id,
+                            result.get("errmsg", "Unknown error"),
+                        )
+                except Exception as e:
+                    logger.exception("Error syncing API key for app %s", resource_id)
+
+            import threading
+
+            thread = threading.Thread(target=_sync_api_key_async, daemon=True)
+            thread.start()
+            logger.info("Started async API key sync thread for app %s", resource_id)
+
         return api_token, 201
 
 

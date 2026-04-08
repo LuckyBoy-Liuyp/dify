@@ -46,6 +46,7 @@ from models.workflow import Workflow
 from services.app_generate_service import AppGenerateService
 from services.errors.app import WorkflowHashNotEqualError
 from services.errors.llm import InvokeRateLimitError
+from services.knowledge_platform_sync_service import KnowledgePlatformSyncService
 from services.workflow_service import DraftWorkflowDeletionError, WorkflowInUseError, WorkflowService
 
 logger = logging.getLogger(__name__)
@@ -851,6 +852,29 @@ class PublishedWorkflowApi(Resource):
             workflow_created_at = TimestampField().format(workflow.created_at)
 
             session.commit()
+
+        # Async sync app info to knowledge platform using threading (non-blocking)
+        def _sync_async():
+            try:
+                # Get current user's mobile number
+                creator_mobile = current_user.mobile if hasattr(current_user, 'mobile') else None
+                
+                sync_service = KnowledgePlatformSyncService()
+                result = sync_service.sync_app_info(app_model, creator_mobile=creator_mobile)
+                if result.get("success"):
+                    logger.info("App %s synced to knowledge platform successfully", app_model.id)
+                else:
+                    logger.warning(
+                        "App %s sync to knowledge platform failed: %s",
+                        app_model.id,
+                        result.get("errmsg", "Unknown error"),
+                    )
+            except Exception as e:
+                logger.exception("Error syncing app %s to knowledge platform", app_model.id)
+
+        import threading
+        thread = threading.Thread(target=_sync_async, daemon=True)
+        thread.start()
 
         return {
             "result": "success",
