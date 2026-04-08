@@ -1,3 +1,5 @@
+import logging
+
 import flask_restx
 from flask_restx import Resource
 from flask_restx._http import HTTPStatus
