@@ -132,7 +132,7 @@ class TicketSSOService:
 
         # 生成随机数
         import secrets
-        nonce = str(secrets.randbelow(900000) + 100000)
+        nonce = str(secrets.randbelow(90000000) + 10000000)
 
         # 使用环境变量中的 appkey/appsecret，如果没有则使用默认值
         appsecret = self.ticket_secret_key or ""
