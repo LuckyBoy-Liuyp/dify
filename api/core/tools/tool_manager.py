@@ -619,7 +619,7 @@ class ToolManager:
         # according to multi credentials, select the one with is_default=True first, then created_at oldest
         # for compatibility with old version
         from libs.login import current_user
-        is_admin = TenantAccountRole.is_admin_role(current_user.current_role)
+        is_admin = TenantAccountRole.is_privileged_role(current_user.current_role)
         if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
             # PostgreSQL: Use DISTINCT ON
             sql = """
@@ -659,7 +659,7 @@ class ToolManager:
     ) -> list[ToolProviderApiEntity]:
         result_providers: dict[str, ToolProviderApiEntity] = {}
         current_user, _ = current_account_with_tenant()
-        is_admin = TenantAccountRole.is_admin_role(current_user)
+        is_admin = TenantAccountRole.is_privileged_role(current_user.role)
         filters = []
         if not typ:
             filters.extend(["builtin", "api", "workflow", "mcp"])

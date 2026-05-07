@@ -23,7 +23,7 @@ def _load_app_model(app_id: str) -> App | None:
     ]
 
     # 非管理员用户需要额外验证创建者权限
-    if not TenantAccountRole.is_admin_role(current_user.current_role):
+    if not TenantAccountRole.is_privileged_role(current_user.current_role):
         conditions.append(App.created_by == current_user.id)
 
     app_model = (

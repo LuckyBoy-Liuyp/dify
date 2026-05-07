@@ -26,7 +26,7 @@ class TagService:
             query = query.where(sa.and_(Tag.name.ilike(f"%{escaped_keyword}%", escape="\\")))
             query = query.where(sa.and_(Tag.name.ilike(f"%{keyword}%")))
 
-        if not TenantAccountRole.is_admin_role(current_user.current_role):
+        if not TenantAccountRole.is_privileged_role(current_user.current_role):
             query.where(Tag.created_by == current_user.id)
         query = query.group_by(Tag.id, Tag.type, Tag.name, Tag.created_at)
         results: list = query.order_by(Tag.created_at.desc()).all()

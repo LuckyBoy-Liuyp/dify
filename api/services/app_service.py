@@ -68,7 +68,7 @@ class AppService:
             else:
                 return None
         # 判断是否是管理员
-        if not TenantAccountRole.is_admin_role(current_user.current_role):
+        if not TenantAccountRole.is_privileged_role(current_user.current_role):
             filters.append(App.created_by == current_user.id)
         app_models = db.paginate(
             sa.select(App).where(*filters).order_by(App.created_at.desc()),
@@ -254,7 +254,7 @@ class AppService:
         :return: App instance
         """
         assert current_user is not None
-        if not TenantAccountRole.is_admin_role(current_user.current_role):
+        if not TenantAccountRole.is_privileged_role(current_user.current_role):
             assert current_user.id != app.created_by, "not authentication"
         app.name = args["name"]
         app.description = args["description"]

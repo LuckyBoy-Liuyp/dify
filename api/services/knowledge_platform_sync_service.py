@@ -198,7 +198,7 @@ class KnowledgePlatformSyncService:
             "intagtName": app_model.name,
             "introduction": description,
             "intagtLogoUrl": icon_url,
-            "showStatus": "1",  # Show by default
+            "showStatus": "0",  # Show by default
             "extId": app_model.id,  # Use app ID as external ID
             "publicStatus": "1" if app_model.is_public else "0",
             "orderId": 999,

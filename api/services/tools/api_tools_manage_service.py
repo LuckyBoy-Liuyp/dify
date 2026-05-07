@@ -442,7 +442,7 @@ class ApiToolManageService:
         """
         # get all api providers
         from libs.login import current_user
-        is_admin = TenantAccountRole.is_admin_role(current_user.current_role)
+        is_admin = TenantAccountRole.is_privileged_role(current_user.current_role)
         api_tool_query = select(ApiToolProvider).where(ApiToolProvider.tenant_id == tenant_id)
         if not is_admin:
             api_tool_query = api_tool_query.where(ApiToolProvider.user_id == current_user.id)

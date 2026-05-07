@@ -86,7 +86,7 @@ def _get_or_create_account(user_info: TicketUserInfo) -> Account:
         if account.status == AccountStatus.BANNED:
             raise ValueError("Account is banned")
 
-        logger.info("Found existing account: %s", account.email)
+        logger.info("Found existing account: %s", account.mobile)
         return account
 
     return account
@@ -117,7 +117,7 @@ class TicketSSOLogin(Resource):
             sso_service = TicketSSOService()
             user_info = sso_service.get_user_info(ticket)
 
-            logger.info("Ticket validated for user: %s", user_info.email)
+            logger.info("Ticket validated for user: %s", user_info.mobile)
 
             # 2. 获取或创建本地账户
             account = _get_or_create_account(user_info)
@@ -148,5 +148,5 @@ class TicketSSOLogin(Resource):
             return {"result": "error", "message": str(e.description)}, 400
 
         except Exception as e:
-            logger.exception("Unexpected error during ticket SSO")
+            logger.exception(str(e.description))
             return {"result": "error", "message": "Login failed"}, 500
