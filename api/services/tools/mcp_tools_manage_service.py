@@ -280,7 +280,7 @@ class MCPToolManageService:
         from models import TenantAccountRole
         from models.account import Account
         current_user, _ = current_account_with_tenant()
-        is_admin = TenantAccountRole.is_admin_role(current_user)
+        is_admin = TenantAccountRole.is_privileged_role(current_user.role)
         stmt = select(MCPToolProvider).where(MCPToolProvider.tenant_id == tenant_id).order_by(MCPToolProvider.name)
         if not is_admin:
             stmt = stmt.where(MCPToolProvider.user_id == current_user.get_id())

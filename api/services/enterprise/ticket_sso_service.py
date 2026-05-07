@@ -176,7 +176,7 @@ class TicketSSOService:
             httpx.RequestError: 网络请求失败
         """
         url = f"{self.ticket_server_url + self.ticket_server_validate_url}"
-
+        logger.info("Ticket validation url : %s", url)
         # 构建带签名的请求体
         request_body = self._build_validate_request_body(ticket)
 
@@ -192,7 +192,7 @@ class TicketSSOService:
             )
 
             logger.info("Ticket validation response status: %s", response.status_code)
-            logger.debug("Response body: %s", response.text)
+            logger.info("Response body: %s", response.text)
 
             if response.status_code != 200:
                 logger.error("Ticket validation failed: %s - %s", response.status_code, response.text)
