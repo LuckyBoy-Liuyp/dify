@@ -6,7 +6,7 @@ import { ThemeProvider } from 'next-themes'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import AmplitudeProvider from '@/app/components/base/amplitude'
 import { TanstackQueryInitializer } from '@/context/query-client'
-import { getDatasetMap } from '@/env'
+import { env, getDatasetMap } from '@/env'
 import { getLocaleOnServer } from '@/i18n-config/server'
 import PartnerStackCookieRecorder from './components/billing/partner-stack/cookie-recorder'
 import CreateAppAttributionBootstrap from './components/create-app-attribution-bootstrap'
@@ -32,36 +32,37 @@ const LocaleLayout = async ({
 }) => {
   const locale = await getLocaleOnServer()
   const datasetMap = getDatasetMap()
+  const basePath = env.NEXT_PUBLIC_BASE_PATH || ''
 
   return (
     <html lang={locale ?? 'en'} className="h-full" suppressHydrationWarning>
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#1C64F2" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Dify" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icon-192x192.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/icon-192x192.png" />
-        <meta name="msapplication-TileColor" content="#1C64F2" />
-        <meta name="msapplication-config" content="/browserconfig.xml" />
+    <head>
+      <link rel="manifest" href={`${basePath}/manifest.json`}/>
+      <meta name="theme-color" content="#1C64F2"/>
+      <meta name="mobile-web-app-capable" content="yes"/>
+      <meta name="apple-mobile-web-app-capable" content="yes"/>
+      <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+      <meta name="apple-mobile-web-app-title" content="Dify"/>
+      <link rel="apple-touch-icon" href={`${basePath}/apple-touch-icon.png`}/>
+      <link rel="icon" type="image/png" sizes="32x32" href={`${basePath}/icon-192x192.png`}/>
+      <link rel="icon" type="image/png" sizes="16x16" href={`${basePath}/icon-192x192.png`}/>
+      <meta name="msapplication-TileColor" content="#1C64F2"/>
+      <meta name="msapplication-config" content={`${basePath}/browserconfig.xml`}/>
 
-        <CreateAppAttributionBootstrap />
-        {/* <ReactGrabLoader /> */}
-        <ReactScanLoader />
-      </head>
-      <body
-        className="h-full select-auto"
-        {...datasetMap}
-      >
-        <div className="isolate h-full">
-          <AmplitudeProvider />
-          <JotaiProvider>
-            <ThemeProvider
-              attribute="data-theme"
-              defaultTheme="system"
+      <CreateAppAttributionBootstrap/>
+      {/* <ReactGrabLoader /> */}
+      <ReactScanLoader/>
+    </head>
+    <body
+      className="h-full select-auto"
+      {...datasetMap}
+    >
+    <div className="isolate h-full">
+      <AmplitudeProvider/>
+      <JotaiProvider>
+        <ThemeProvider
+          attribute="data-theme"
+          defaultTheme="system"
               enableSystem
               disableTransitionOnChange
             >

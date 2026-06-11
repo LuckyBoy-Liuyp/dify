@@ -1,11 +1,9 @@
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@langgenius/dify-ui/cn'
 import { toast } from '@langgenius/dify-ui/toast'
 import { RiContractLine, RiDoorLockLine, RiErrorWarningFill } from '@remixicon/react'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import * as React from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect,useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { IS_CE_EDITION } from '@/config'
 import Link from '@/next/link'
@@ -21,6 +19,7 @@ import SocialAuth from './components/social-auth'
 import SSOAuth from './components/sso-auth'
 import Split from './split'
 import { resolvePostLoginRedirect } from './utils/post-login-redirect'
+import { loginWithTicket } from '@/service/sso'
 
 const NormalForm = () => {
   const { t } = useTranslation()
@@ -37,6 +36,8 @@ const NormalForm = () => {
   const message = decodeURIComponent(searchParams.get('message') || '')
   const invite_token = decodeURIComponent(searchParams.get('invite_token') || '')
   const ticket = searchParams.get('ticket')
+  const extId = searchParams.get('extId')
+  const hasTicketLoginRef = useRef(false)
   const [isInitCheckLoading, setInitCheckLoading] = useState(true)
   const [isRedirecting, setIsRedirecting] = useState(false)
   const isLoading = isCheckLoading || isInitCheckLoading || isRedirecting
@@ -57,8 +58,21 @@ const NormalForm = () => {
         return
       }
       // 肖星亮修改
-      if (ticket) {
+      if (ticket && extId) {
+        if (hasTicketLoginRef.current)
+          return
+        hasTicketLoginRef.current = true
         setIsRedirecting(true)
+        await loginWithTicket(ticket)
+        router.replace('/app/' + extId + '/workflow')
+        return
+      }
+      if (ticket) {
+        if (hasTicketLoginRef.current)
+          return
+        hasTicketLoginRef.current = true
+        setIsRedirecting(true)
+        await loginWithTicket(ticket)
         router.replace('/apps')
         return
       }

@@ -11,6 +11,7 @@ const allowedDevOrigins = process.env.NEXT_ALLOWED_DEV_ORIGINS?.split(',')
 
 const nextConfig: NextConfig = {
   basePath: env.NEXT_PUBLIC_BASE_PATH,
+  assetPrefix: env.NEXT_PUBLIC_WEB_PREFIX || undefined,
   ...(allowedDevOrigins?.length ? { allowedDevOrigins } : {}),
   transpilePackages: ['@t3-oss/env-core', '@t3-oss/env-nextjs', 'echarts', 'zrender'],
   turbopack: {
