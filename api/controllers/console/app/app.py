@@ -101,12 +101,19 @@ def _normalize_app_list_query_args(query_args: MultiDict[str, str]) -> dict[str,
             indexed_tag_ids.extend((int(match.group(1)), value) for value in query_args.getlist(key))
             continue
 
+        if key == "tag_ids":
+            continue
+
         value = query_args.get(key)
         if value is not None:
             normalized[key] = value
 
     if indexed_tag_ids:
         normalized["tag_ids"] = [value for _, value in sorted(indexed_tag_ids)]
+    elif "tag_ids" in query_args:
+        plain_tag_ids = query_args.getlist("tag_ids")
+        if plain_tag_ids:
+            normalized["tag_ids"] = plain_tag_ids
 
     return normalized
 

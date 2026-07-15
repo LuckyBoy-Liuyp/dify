@@ -115,27 +115,13 @@ class KnowledgePlatformSyncService:
 
             # Build auth headers with signature
             headers = self._build_auth_headers()
-
+            logger.info("Knowledge platform request for app %s: %s", app_model.id, intagt_data)
             # Send request using httpx
             with httpx.Client(timeout=60) as client:
                 response = client.post(api_url, headers=headers, json=intagt_data)
-
             # Parse response
             result = response.json()
-
-            # Check business logic success
-            if result.get("code") == 200 or result.get("success"):
-                logger.info(
-                    "Successfully synced app %s to knowledge platform: %s",
-                    app_model.id,
-                    result.get("message", "Success"),
-                )
-            else:
-                logger.warning(
-                    "Failed to sync app %s to knowledge platform: %s",
-                    app_model.id,
-                    result.get("message", "Unknown error"),
-                )
+            logger.info("Knowledge platform response for app %s: %s", app_model.id, result)
 
             return result
 
@@ -179,25 +165,10 @@ class KnowledgePlatformSyncService:
         if app_model.mode == "workflow":
             intagt_type = "2"  # Workflow agent
 
-        # Prepare icon URL
-        from core.file import helpers as file_helpers
-
-        icon_url = ""
-        if app_model.icon_type == "image" and app_model.icon:
-            # Icon is stored as file ID, generate signed URL
-            icon_url = file_helpers.get_signed_file_url(app_model.icon)
-        elif app_model.icon_type == "emoji" and app_model.icon:
-            # Icon is stored as direct URL
-            icon_url = app_model.icon
-
-        # Use default icon if not set
-        if not icon_url:
-            icon_url = "https://zszx.dcyun.com:48468/files/water-kc/water-kc-manage/20250425/1745550612204/%E5%B0%8F%E5%B7%9D%EF%BC%88%E6%9C%89%E6%89%8B%E7%89%88%EF%BC%89_apng.png"
-
         return {
             "intagtName": app_model.name,
             "introduction": description,
-            "intagtLogoUrl": icon_url,
+            "intagtLogoUrl": '',
             "showStatus": "1",  # Show by default
             "extId": app_model.id,  # Use app ID as external ID
             "publicStatus": "1" if app_model.is_public else "0",
@@ -208,19 +179,17 @@ class KnowledgePlatformSyncService:
             "mobile": creator_mobile or "",
         }
 
-    def sync_app_api_key(self, app_model: App, api_key: str, creator_mobile: str | None = None) -> dict:
+    def sync_app_api_key(self, app_id: str, api_key: str, creator_mobile: str | None = None) -> dict:
         """
         Sync app API key to knowledge platform.
 
         Args:
-            app_model: The app model
+            app_id: The app ID
             api_key: The API key to sync
+            creator_mobile: Creator's mobile number (optional)
 
         Returns:
             dict: Response from knowledge platform API
-            :param api_key:
-            :param app_model:
-            :param creator_mobile:
         """
         if not self.enabled:
             logger.debug("Knowledge platform sync is disabled")
@@ -231,54 +200,35 @@ class KnowledgePlatformSyncService:
             return {"success": False, "message": "Base URL not configured"}
 
         try:
-            # Build API URL
             api_url = f"{self.base_url + self.sync_route}"
-
-            # Prepare data with API key
             intagt_data = {
-                "extId": app_model.id,
+                "extId": app_id,
                 "intagtApikey": api_key,
                 "mobile": creator_mobile or "",
             }
 
-            # Build auth headers with signature
             headers = self._build_auth_headers()
-
-            # Send request using httpx
+            logger.info("Knowledge platform API key sync request for app %s: %s", app_id, intagt_data)
             with httpx.Client(timeout=60) as client:
                 response = client.post(api_url, headers=headers, json=intagt_data)
 
-            # Parse response
             result = response.json()
-
-            # Check business logic success
-            if result.get("code") == 200 or result.get("success"):
-                logger.info(
-                    "Successfully synced API key for app %s to knowledge platform: %s",
-                    app_model.id,
-                    result.get("message", "Success"),
-                )
-            else:
-                logger.warning(
-                    "Failed to sync API key for app %s to knowledge platform: %s",
-                    app_model.id,
-                    result.get("errmsg", "Unknown error"),
-                )
+            logger.info("Knowledge platform API key sync response for app %s: %s", app_id, result)
 
             return result
 
         except httpx.RequestError as e:
-            logger.exception("Connection error when syncing API key for app %s", app_model.id)
+            logger.exception("Connection error when syncing API key for app %s", app_id)
             return {"success": False, "message": f"Connection error: {str(e)}"}
 
         except httpx.TimeoutException:
-            logger.exception("Timeout when syncing API key for app %s to knowledge platform", app_model.id)
+            logger.exception("Timeout when syncing API key for app %s to knowledge platform", app_id)
             return {"success": False, "message": "Request timeout"}
 
         except json.JSONDecodeError:
-            logger.exception("Invalid JSON response from knowledge platform for app %s API key", app_model.id)
+            logger.exception("Invalid JSON response from knowledge platform for app %s API key", app_id)
             return {"success": False, "message": "Invalid response format"}
 
         except Exception as e:
-            logger.exception("Unexpected error when syncing API key for app %s to knowledge platform", app_model.id)
+            logger.exception("Unexpected error when syncing API key for app %s to knowledge platform", app_id)
             return {"success": False, "message": f"Unexpected error: {str(e)}"}

@@ -544,7 +544,20 @@ class Workflow(Base):  # bug
             var: VariableBase,
         ) -> StringVariable | IntegerVariable | FloatVariable | SecretVariable:
             if isinstance(var, SecretVariable):
-                return var.model_copy(update={"value": encrypter.decrypt_token(tenant_id=tenant_id, token=var.value)})
+                try:
+                    decrypted_value = encrypter.decrypt_token(tenant_id=tenant_id, token=var.value)
+                    return var.model_copy(update={"value": decrypted_value})
+                except Exception as e:
+                    # If decryption fails (e.g., key mismatch), keep the encrypted value
+                    # This allows the workflow to still be accessible for editing
+                    logger.warning(
+                        "Failed to decrypt environment variable '%s' for tenant %s: %s. "
+                        "Keeping original encrypted value.",
+                        var.name,
+                        tenant_id,
+                        str(e),
+                    )
+                    return var
             elif isinstance(var, (StringVariable, IntegerVariable, FloatVariable)):
                 return var
             else:

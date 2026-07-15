@@ -526,7 +526,7 @@ class ApiToolManageService:
         db_providers = db.session.scalars(api_tool_query).all()
 
         result: list[ToolProviderApiEntity] = []
-        for provider in providers:
+        for provider in db_providers:
             # convert provider controller to user provider
             provider_controller = ToolTransformService.api_provider_to_controller(db_provider=provider)
             labels = ToolLabelManager.get_tool_labels(provider_controller)

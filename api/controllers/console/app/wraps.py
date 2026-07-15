@@ -27,6 +27,7 @@ def _load_app_model(app_id: str) -> App | None:
         db.session.query(App)
             .where(*conditions)
             .limit(1)
+            .scalar()
     )
     return app_model
 

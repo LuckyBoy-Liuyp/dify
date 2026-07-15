@@ -269,7 +269,7 @@ class AppService:
         """
         assert current_user is not None
         if not TenantAccountRole.is_privileged_role(current_user.current_role):
-            assert current_user.id != app.created_by, "not authentication"
+            assert current_user.id == app.created_by, "not authentication"
         app.name = args["name"]
         app.description = args["description"]
         icon_type = args.get("icon_type")

@@ -21,6 +21,7 @@ class SetupRequestPayload(BaseModel):
     name: str = Field(..., max_length=30, description="Admin name (max 30 characters)")
     password: str = Field(..., description="Admin password")
     language: str | None = Field(default=None, description="Admin language")
+    mobile: str | None = Field(default=None, description="Admin mobile number")
 
     @field_validator("password")
     @classmethod
@@ -93,6 +94,7 @@ def setup_system(payload: SetupRequestPayload) -> SetupResponse:
         name=payload.name,
         password=payload.password,
         ip_address=extract_remote_ip(request),
+        mobile=payload.mobile or "",
         language=payload.language,
     )
 

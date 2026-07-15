@@ -218,7 +218,7 @@ class AccountService:
         if not mobile:
             raise AccountNotFoundError("mobile is not null.")
 
-        account = db.session.query(Account).filter_by(email=email).limit(1)
+        account = db.session.scalar(select(Account).where(Account.email == email).limit(1))
         if not account:
             raise AccountPasswordError("Invalid email or password.")
 

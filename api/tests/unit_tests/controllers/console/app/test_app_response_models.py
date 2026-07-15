@@ -263,12 +263,23 @@ def test_app_list_query_sorts_bracket_tag_ids_by_index(app_module):
     assert query.tag_ids == [first_tag_id, second_tag_id, third_tag_id]
 
 
-def test_app_list_query_rejects_flat_tag_ids(app_module):
+def test_app_list_query_normalizes_flat_tag_ids(app_module):
     tag_id = "8c4ef3d1-58a1-4d94-8a1c-1c171d889e08"
     normalized = app_module._normalize_app_list_query_args(MultiDict([("tag_ids", tag_id)]))
+    query = app_module.AppListQuery.model_validate(normalized)
 
-    with pytest.raises(ValidationError):
-        app_module.AppListQuery.model_validate(normalized)
+    assert query.tag_ids == [tag_id]
+
+
+def test_app_list_query_normalizes_multiple_flat_tag_ids(app_module):
+    first_tag_id = "8c4ef3d1-58a1-4d94-8a1c-1c171d889e08"
+    second_tag_id = "3c39395b-6d1f-4030-8b17-eaa7cc85221c"
+    normalized = app_module._normalize_app_list_query_args(
+        MultiDict([("tag_ids", first_tag_id), ("tag_ids", second_tag_id)])
+    )
+    query = app_module.AppListQuery.model_validate(normalized)
+
+    assert query.tag_ids == [first_tag_id, second_tag_id]
 
 
 def test_app_partial_serialization_uses_aliases(app_models):

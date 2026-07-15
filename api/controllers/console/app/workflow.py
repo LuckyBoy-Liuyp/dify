@@ -869,17 +869,10 @@ class PublishedWorkflowApi(Resource):
                 creator_mobile = current_user.mobile if hasattr(current_user, 'mobile') else None
 
                 sync_service = KnowledgePlatformSyncService()
-                result = sync_service.sync_app_info(app_model, creator_mobile=creator_mobile)
-                if result.get("success"):
-                    logger.info("App %s synced to knowledge platform successfully", app_model.id)
-                else:
-                    logger.warning(
-                        "App %s sync to knowledge platform failed: %s",
-                        app_model.id,
-                        result.get("errmsg", "Unknown error"),
-                    )
+                sync_service.sync_app_info(app_model, creator_mobile=creator_mobile)
+
             except Exception as e:
-                logger.exception("Error syncing app %s to knowledge platform", app_model.id)
+                logger.info("将应用程序 %s 同步到知识平台时出错", app_model.id, e)
 
         import threading
         thread = threading.Thread(target=_sync_async, daemon=True)

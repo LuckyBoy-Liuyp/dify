@@ -127,17 +127,10 @@ class BaseApiKeyListResource(Resource):
             def _sync_api_key_async():
                 try:
                     sync_service = KnowledgePlatformSyncService()
-                    result = sync_service.sync_app_api_key(resource, key, creator_mobile)
-                    if result.get("success"):
-                        logger.info("App %s API key synced to knowledge platform successfully", resource_id)
-                    else:
-                        logger.warning(
-                            "App %s API key sync failed: %s",
-                            resource_id,
-                            result.get("errmsg", "Unknown error"),
-                        )
+                    result = sync_service.sync_app_api_key(resource_id, key, creator_mobile)
+
                 except Exception as e:
-                    logger.exception("Error syncing API key for app %s", resource_id)
+                    logger.error("同步应用程序的API密钥时出错 %s: %s", resource_id, e)
 
             import threading
 
@@ -165,12 +158,12 @@ class BaseApiKeyResource(Resource):
 
         key = db.session.scalar(
             select(ApiToken)
-            .where(
+                .where(
                 getattr(ApiToken, self.resource_id_field) == resource_id,
                 ApiToken.type == self.resource_type,
                 ApiToken.id == api_key_id,
             )
-            .limit(1)
+                .limit(1)
         )
 
         if key is None:
